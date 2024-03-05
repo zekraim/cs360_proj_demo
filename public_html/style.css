@@ -26,3 +26,11 @@
   background-color: #379963;
   color: white;
 }
+
+
+.textinput {
+    font-size: 20pt;
+    height: 60px;
+    width: 500px;
+    margin-bottom: 10px;
+}
