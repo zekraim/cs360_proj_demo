@@ -18,14 +18,21 @@
 
         <div>
             <h1>Attribute Closure Method</h1>
+            
+            <p>
+                Enter your functional dependencies in the following manner: "A,B,...,C,D>W,X,...,Y,Z:". Capitals do not matter. If you deviate from this 
+                format the system will break. {A,B,...,C,D} are the determinant attributes, {W,X,...,Y,Z} are the dependent attributes of each
+                functional dependency. The colon separates functional dependencies.
+            </p>
 
-            <form action="/action_page.php">
-                <label for="fname">Input:</label><br>
-                <input type="text" id="fname" name="fname" class="textinput" placeholder="Input Here"><br>
+            <form action="attclosehandling.php" method="GET">
+                <label for="fname">Input Functional Dependency Set:</label><br>
+                <input type="text" id="fname" name="dependencies" class="textinput" placeholder="e.g. a,b>c,d:e>f:"><br>
                 <input type="submit" value="Submit">
             </form> 
 
-            <p>If you click the "Submit" button, the form-data will be sent to a page called "/action_page.php".</p>
+            <p>Click the "Submit" button to display the dependencies and show the closure set of each element in the relation set. 
+                To exit the page you will need to click the back arrow on your browser.".</p>
         </div>
 
     </body>
