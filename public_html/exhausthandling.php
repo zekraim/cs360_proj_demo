@@ -40,6 +40,12 @@
             }
         }
     }
+    
+    // return <0 if length of a less than length of b, 0 if lengths are equal, >0 if length of a more than length of b
+    // used for usort compare function later in code
+    function cmp($a, $b){
+        return count($a)-count($b);
+    }
 
     $_GET["dependencies"] = strtoupper($_GET["dependencies"]);
     $chars = str_split($_GET["dependencies"]);
@@ -104,6 +110,8 @@
     $subsets = array(); // store array of all subsets
     $subset = array(); // store individual subsets
     calcsubsets($relations, $subsets, $subset,0);
+    usort($subsets, "cmp");
+
 
     // compute attribute closure for each combination
     echo "<br>";
