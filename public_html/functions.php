@@ -37,6 +37,19 @@ function parse_input_FD($chars)
     return $dep;
 }
 
+function parse_input_from_table($table){
+    $dep = array();
+    $left = array();
+    $right = array();
+    foreach ($table as $row){
+        array_push($left,str_split(htmlspecialchars($row['FD_LEFT'])));
+        array_push($right, str_split(htmlspecialchars($row['FD_RIGHT'])));
+    }
+    array_push($dep, $left);
+    array_push($dep,$right);
+    return $dep;
+}
+
 function store_attributes($chars){
     $relations = array();
     foreach($chars as $char){
