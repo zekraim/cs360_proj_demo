@@ -10,6 +10,10 @@ if ($_SERVER['REQUEST_METHOD'] == "POST") { // if new data has been posted
         mysqli_query($con, $clear_query);
         $clear_query = "truncate table closure_solution";
         mysqli_query($con, $clear_query);
+        $clear_steps_query = "truncate table student_steps";
+        mysqli_query($con, $clear_steps_query);
+
+        
         // receive and store form input
         $chars = str_split(strtoupper($_POST['dependencies']));
         //process input into dependencies and store in $dep
@@ -33,7 +37,8 @@ if ($_SERVER['REQUEST_METHOD'] == "POST") { // if new data has been posted
         $query_input = "select * from inputfds";
         $result_input = mysqli_query($con, $query_input);
         $input_fds = $result_input->fetch_all(MYSQLI_ASSOC);
-        
+
+
     }
     
     // user has posted attribute to calculate
@@ -41,6 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] == "POST") { // if new data has been posted
         // grab table data
         $query_input = "select * from inputfds";
         $result_input = mysqli_query($con, $query_input);
+        $auto_increment_start = mysqli_num_rows($result_input)+1;
         $input_fds = $result_input->fetch_all(MYSQLI_ASSOC);
         // create $dep to use to calculate attributes from table data
         $dep = parse_input_from_table($input_fds);
@@ -50,6 +56,8 @@ if ($_SERVER['REQUEST_METHOD'] == "POST") { // if new data has been posted
         mysqli_query($con, $clear_calc_query);
         $clear_steps_query = "truncate table student_steps";
         mysqli_query($con, $clear_steps_query);
+        $steps_auto_increment_query = "alter table student_steps AUTO_INCREMENT=$auto_increment_start";
+        mysqli_query($con, $steps_auto_increment_query);
         // put attribute to be calculated into table
         $attr = $_POST['calc_attr'];
         if (ctype_alpha($attr)){
@@ -58,14 +66,32 @@ if ($_SERVER['REQUEST_METHOD'] == "POST") { // if new data has been posted
                     $closure = implode($closure);
                     $query = "insert into closure_solution (ATTR,CLOSURE) values ('$attr','$closure')";
                     mysqli_query($con, $query);
-                    echo $attr;
-                    echo $closure;
+
         }
     }
     
     // add spot for user entering their own FD stuff for closures here:
-    
-    
+    // need to have some sort of condition to trigger stopping inputs when done is selected.
+    // then will compare if the attribute closure calculated is correct and display whether or not.
+    // if we want to get fancy/have time we can go through each step and try to figure out if one was invalid --- if none invalid, then one missing
+    // this honestly might be really difficult to do though, because there are three other pages to set up aswell
+    if (isset($_POST['submit_step'])) {
+        if (
+                isset($_POST['step_right']) &&
+                isset($_POST['step_used']) &&
+                isset($_POST['next'])
+        ){
+            $right = strtoupper($_POST['step_right']);
+            $used = $_POST['step_used'];
+            $next = $_POST['next'];
+            $query = "insert into student_steps (FD_RIGHT,FD_USED, NEXT) values ('$right','$used','$next')";
+            mysqli_query($con, $query);
+            // here is probably where would need to check for if $next=="DONE" and then run some php
+        } else{
+            // some sort of php code to javascript to show error an error that not everything is filled out
+        }
+        
+    }
     // can add a clear button at the top of the page at somepoint to clear all table data
 }
 
@@ -99,91 +125,102 @@ $student_steps = $result_steps->fetch_all(MYSQLI_ASSOC);
 
         <div>
             <h1>Attribute Closure Method</h1>
+            <div id="input_form"
+                <p>
+                    Enter your functional dependencies in the following manner: "A,B,...,C,D>W,X,...,Y,Z:". Capitals do not matter. If you deviate from this 
+                    format the system will break. {A,B,...,C,D} are the determinant attributes, {W,X,...,Y,Z} are the dependent attributes of each
+                    functional dependency. The colon separates functional dependencies.
+                </p>
 
-            <p>
-                Enter your functional dependencies in the following manner: "A,B,...,C,D>W,X,...,Y,Z:". Capitals do not matter. If you deviate from this 
-                format the system will break. {A,B,...,C,D} are the determinant attributes, {W,X,...,Y,Z} are the dependent attributes of each
-                functional dependency. The colon separates functional dependencies.
-            </p>
+                <form action="attclose.php" method="post">
+                    <label for="fname">Input Functional Dependency Set:</label><br>
+                    <input type="text" id="fname" name="dependencies" class="textinput" placeholder="e.g. a,b>c,d:e>f:"><br>
+                    <input type="submit" value="Submit">
+                </form> 
 
-            <form action="attclose.php" method="post">
-                <label for="fname">Input Functional Dependency Set:</label><br>
-                <input type="text" id="fname" name="dependencies" class="textinput" placeholder="e.g. a,b>c,d:e>f:"><br>
-                <input type="submit" value="Submit">
-            </form> 
-
-            <p>Click the "Submit" button to display the dependencies and show the closure set of each element in the relation set. 
-                To exit the page you will need to click the back arrow on your browser.".</p>
-
+                <p>Click the "Submit" button to display the dependencies and show the closure set of each element in the relation set. 
+                    To exit the page you will need to click the back arrow on your browser.".</p>
+            </div>
             <br><br>
-            <h2>Input FDs</h2>
-            <table border="1">
-                <tr>
-                    <th>FD Number</th>
-                    <th>Left</th>
-                    <th>Right</th>
-                </tr>
-                <?php foreach ($input_fds as $row): ?>
+            <div id="input_disp">
+                <h2>Input FDs</h2>
+                <table border="1">
                     <tr>
-                        <td><?= htmlspecialchars($row['fd_id']) ?></td>
-                        <td><?= htmlspecialchars($row['FD_LEFT']) ?></td>
-                        <td><?= htmlspecialchars($row['FD_RIGHT']) ?></td>
+                        <th>FD Number</th>
+                        <th>Left</th>
+                        <th>Right</th>
                     </tr>
-                <?php endforeach ?>
-            </table>
+                    <?php foreach ($input_fds as $row): ?>
+                        <tr>
+                            <td><?= htmlspecialchars($row['fd_id']) ?></td>
+                            <td><?= htmlspecialchars($row['FD_LEFT']) ?></td>
+                            <td><?= htmlspecialchars($row['FD_RIGHT']) ?></td>
+                        </tr>
+                    <?php endforeach ?>
+                </table>
+            </div>
 
             <br><br>
             <!-- student chooses a set of attributes to derive a closure of here :: only after input FDs given-->
-            <form action="attclose.php" method="post">
-                <label for="fname">Attribute Set to Computer Closure Of:</label><br>
-                <input type="text" id="fname" name="calc_attr" class="textinput" placeholder="e.g. AB"><br>
-                <input type="submit" value="Submit">
-            </form> 
-            
-            <!-- display student solution steps here-->
-            <h2>Solution Steps</h2>
-            <table border="1">
-                <tr>
-                    <th>FD Number</th>
-                    <th>Left</th>
-                    <th>Right</th>
-                    <th>Next</th>
-                </tr>
-                <?php foreach ($student_steps as $row): ?>
+            <div id="attr_form"
+                <form action="attclose.php" method="post">
+                    <label for="fname">Attribute Set to Computer Closure Of:</label><br>
+                    <input type="text" id="fname" name="calc_attr" class="textinput" placeholder="e.g. AB"><br>
+                    <input type="submit" value="Submit">
+                </form>
+            </div>
+            <div id="attr_disp"
+                <h3>Attribute: <?php if(isset($closure_sols[0])){echo $closure_sols[0]['ATTR'];}?></h3>
+                <!-- display student solution steps here-->
+                <h2>Solution Steps</h2>
+                <table border="1">
                     <tr>
-                        <td><?= htmlspecialchars($row['STEP_ID']) ?></td>
-                        <td><?= htmlspecialchars($row['FD_LEFT']) ?></td>
-                        <td><?= htmlspecialchars($row['FD_RIGHT']) ?></td>
-                        <td><?= htmlspecialchars($row['NEXT']) ?></td>
-                        
+                        <th>FD Number</th>
+                        <th>Attribute</th>
+                        <th>Right</th>
+                        <th>Used</th>
+                        <th>Next</th>
                     </tr>
-                <?php endforeach ?>
-            </table>
-            <!-- Receive next step here-->
-            <form action="attclose.php" method="post">
-                <label for="fname">Attribute Set to Computer Closure Of:</label><br>
-                <input type="text" id="left" name="step" class="textinput">
-                <input type="text" id="right" name="step" class="textinput">
-                
-                <input type="submit" value="Submit">
-            </form> 
-            
+                    <?php foreach ($student_steps as $row): ?>
+                        <tr>
+                            <td><?= htmlspecialchars($row['STEP_ID']) ?></td>
+                            <td><?= htmlspecialchars($row['FD_LEFT']) ?></td>
+                            <td><?= htmlspecialchars($row['FD_RIGHT']) ?></td>
+                            <td>FD<?= htmlspecialchars($row['FD_USED']) ?></td>
+                            <td><?= htmlspecialchars($row['NEXT']) ?></td>
 
-            <br><br>
-            <h2>Attribute Closures on R</h2>
-            <table border="1">
-                <tr>
-                    <th>Attribute</th>
-                    <th>Closure</th>
-                </tr>
-                <?php foreach ($closure_sols as $row): ?>
+                        </tr>
+                    <?php endforeach ?>
+                </table>
+            </div>
+            <div id="steps_form"
+                <!-- Receive next step here-->
+                <form action="attclose.php" method="post">
+                    <label for="fname">Closure Calculation Steps:</label><br>
+                    <input type="text" size="10" id="right" name="step_right" class="textinput">
+                    <input type="text" size="2" id="used" name="step_used" class="textinput">
+                    <input type="radio" id="next_continue" name="next" value="CONTINUE">
+                    <input type="radio" id="next_continue" name="next" value="DONE">
+                    <input type="submit" value="Submit Step" name="submit_step">
+                </form> 
+            </div>
+            
+            <div id="steps_disp"
+                <br><br>
+                <h2>Attribute Closures on R</h2>
+                <table border="1">
                     <tr>
-                        <td><?= htmlspecialchars($row['ATTR']) ?></td>
-                        <td><?= htmlspecialchars($row['CLOSURE']) ?></td>
+                        <th>Attribute</th>
+                        <th>Closure</th>
                     </tr>
-                <?php endforeach ?>
-            </table>
+                    <?php foreach ($closure_sols as $row): ?>
+                        <tr>
+                            <td><?= htmlspecialchars($row['ATTR']) ?></td>
+                            <td><?= htmlspecialchars($row['CLOSURE']) ?></td>
+                        </tr>
+                    <?php endforeach ?>
+                </table>
+            </div>
         </div>
-
     </body>
 </html>
