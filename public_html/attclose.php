@@ -104,6 +104,46 @@ $closure_sols = $result_sol->fetch_all(MYSQLI_ASSOC);
 $query_steps = "select * from student_steps";
 $result_steps = mysqli_query($con, $query_steps);
 $student_steps = $result_steps->fetch_all(MYSQLI_ASSOC);
+// handling all of the showing/hiding of forms and displays
+$student_done_query = "SELECT NEXT FROM student_steps ORDER BY STEP_ID DESC LIMIT 1;";
+$result_student_done = mysqli_query($con, $student_done_query);
+$student_done_mysqli = $result_student_done->fetch_all(MYSQLI_ASSOC);
+if (isset($student_done_mysqli[0])){
+    if($student_done_mysqli[0]['NEXT'] == "DONE"){
+        $student_done=true;
+    } else{
+        $student_done = false;
+    }
+} else{
+    $student_done = false;
+}
+if (isset($input_fds[0])){
+    $input = true;
+} else {
+    $input = false;
+}
+if (isset($closure_sols[0])){
+    $attribute = true;
+} else{
+    $attribute = false;
+}
+if (isset($student_steps[0])){
+    $steps = true;
+} else {
+    $steps = false;
+}
+$json = json_encode(array($input, $attribute, $steps, $student_done));
+echo "<script> var display_data=$json; </script>";
+
+// now here we will handle if the student has selected done.
+// steps: 
+// 1. check if they are correct
+// 2. if they are correct tell them
+// 3. if they are incorrect, find(check if exists) incorrect closure step assumptions
+// 4. inform user of incorrect ones
+// 5. if none exist, assume user didn't make enough assumptions, tell them
+// 6. done. tell them they can submit a new R or a new attribute closure to calculate
+        
 ?>
 <!DOCTYPE html>
 
@@ -113,8 +153,9 @@ $student_steps = $result_steps->fetch_all(MYSQLI_ASSOC);
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <link rel="stylesheet" href="style.css"/>
+        <script src="attclose_funcs.js"></script>
     </head>
-    <body>
+    <body onload="disp_sections(display_data[0], display_data[1], display_data[2], display_data[3])">
         <div class="topnav">
             <a href="index.html">Home</a>
             <a class = "active" href="attclose.html">Attribute Closure</a>
@@ -125,7 +166,7 @@ $student_steps = $result_steps->fetch_all(MYSQLI_ASSOC);
 
         <div>
             <h1>Attribute Closure Method</h1>
-            <div id="input_form"
+            <div id="input_form">
                 <p>
                     Enter your functional dependencies in the following manner: "A,B,...,C,D>W,X,...,Y,Z:". Capitals do not matter. If you deviate from this 
                     format the system will break. {A,B,...,C,D} are the determinant attributes, {W,X,...,Y,Z} are the dependent attributes of each
@@ -141,7 +182,7 @@ $student_steps = $result_steps->fetch_all(MYSQLI_ASSOC);
                 <p>Click the "Submit" button to display the dependencies and show the closure set of each element in the relation set. 
                     To exit the page you will need to click the back arrow on your browser.".</p>
             </div>
-            <br><br>
+            
             <div id="input_disp">
                 <h2>Input FDs</h2>
                 <table border="1">
@@ -162,15 +203,17 @@ $student_steps = $result_steps->fetch_all(MYSQLI_ASSOC);
 
             <br><br>
             <!-- student chooses a set of attributes to derive a closure of here :: only after input FDs given-->
-            <div id="attr_form"
+            <div id="attr_form">
                 <form action="attclose.php" method="post">
                     <label for="fname">Attribute Set to Computer Closure Of:</label><br>
                     <input type="text" id="fname" name="calc_attr" class="textinput" placeholder="e.g. AB"><br>
                     <input type="submit" value="Submit">
                 </form>
             </div>
-            <div id="attr_disp"
+            <div id="attr_disp">
                 <h3>Attribute: <?php if(isset($closure_sols[0])){echo $closure_sols[0]['ATTR'];}?></h3>
+            </div>
+            <div id="steps_disp">
                 <!-- display student solution steps here-->
                 <h2>Solution Steps</h2>
                 <table border="1">
@@ -184,16 +227,16 @@ $student_steps = $result_steps->fetch_all(MYSQLI_ASSOC);
                     <?php foreach ($student_steps as $row): ?>
                         <tr>
                             <td><?= htmlspecialchars($row['STEP_ID']) ?></td>
-                            <td><?= htmlspecialchars($row['FD_LEFT']) ?></td>
+                            <td><?php if(isset($closure_sols[0])){echo $closure_sols[0]['ATTR'];} ?></td>
                             <td><?= htmlspecialchars($row['FD_RIGHT']) ?></td>
-                            <td>FD<?= htmlspecialchars($row['FD_USED']) ?></td>
+                            <td>FD <?= htmlspecialchars($row['FD_USED']) ?></td>
                             <td><?= htmlspecialchars($row['NEXT']) ?></td>
 
                         </tr>
                     <?php endforeach ?>
                 </table>
             </div>
-            <div id="steps_form"
+            <div id="steps_form">
                 <!-- Receive next step here-->
                 <form action="attclose.php" method="post">
                     <label for="fname">Closure Calculation Steps:</label><br>
@@ -204,8 +247,7 @@ $student_steps = $result_steps->fetch_all(MYSQLI_ASSOC);
                     <input type="submit" value="Submit Step" name="submit_step">
                 </form> 
             </div>
-            
-            <div id="steps_disp"
+            <div id="sol_disp">
                 <br><br>
                 <h2>Attribute Closures on R</h2>
                 <table border="1">
@@ -221,6 +263,7 @@ $student_steps = $result_steps->fetch_all(MYSQLI_ASSOC);
                     <?php endforeach ?>
                 </table>
             </div>
+            
         </div>
     </body>
 </html>
