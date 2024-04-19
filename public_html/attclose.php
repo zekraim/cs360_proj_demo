@@ -70,11 +70,7 @@ if ($_SERVER['REQUEST_METHOD'] == "POST") { // if new data has been posted
         }
     }
     
-    // add spot for user entering their own FD stuff for closures here:
-    // need to have some sort of condition to trigger stopping inputs when done is selected.
-    // then will compare if the attribute closure calculated is correct and display whether or not.
-    // if we want to get fancy/have time we can go through each step and try to figure out if one was invalid --- if none invalid, then one missing
-    // this honestly might be really difficult to do though, because there are three other pages to set up aswell
+    // handle the user submitted steps
     if (isset($_POST['submit_step'])) {
         if (
                 isset($_POST['step_right']) &&
@@ -86,13 +82,12 @@ if ($_SERVER['REQUEST_METHOD'] == "POST") { // if new data has been posted
             $next = $_POST['next'];
             $query = "insert into student_steps (FD_RIGHT,FD_USED, NEXT) values ('$right','$used','$next')";
             mysqli_query($con, $query);
-            // here is probably where would need to check for if $next=="DONE" and then run some php
         } else{
             // some sort of php code to javascript to show error an error that not everything is filled out
         }
         
     }
-    // can add a clear button at the top of the page at somepoint to clear all table data
+    // can add a clear button at the top of the page at somepoint to clear row data if time permits
 }
 
 $query_input = "select * from inputfds";
@@ -105,7 +100,7 @@ $query_steps = "select * from student_steps";
 $result_steps = mysqli_query($con, $query_steps);
 $student_steps = $result_steps->fetch_all(MYSQLI_ASSOC);
 // handling all of the showing/hiding of forms and displays
-$student_done_query = "SELECT NEXT FROM student_steps ORDER BY STEP_ID DESC LIMIT 1;";
+$student_done_query = "SELECT FD_RIGHT, NEXT FROM student_steps ORDER BY STEP_ID DESC LIMIT 1;";
 $result_student_done = mysqli_query($con, $student_done_query);
 $student_done_mysqli = $result_student_done->fetch_all(MYSQLI_ASSOC);
 if (isset($student_done_mysqli[0])){
@@ -117,6 +112,69 @@ if (isset($student_done_mysqli[0])){
 } else{
     $student_done = false;
 }
+
+// now here we will handle if the student has selected done.
+// steps: 
+// 1. check if they are correct
+// 2. if they are correct tell them
+// 3. if they are incorrect, find(check if exists) incorrect closure step assumptions
+// 4. inform user of incorrect ones
+// 5. if none exist, assume user didn't make enough assumptions, tell them
+// 6. done. tell them they can submit a new R or a new attribute closure to calculate
+if ($student_done){ // begin grading process
+    $correct_closure = $closure_sols[0]["CLOSURE"];
+    if ($student_done_mysqli[0]['FD_RIGHT'] == $correct_closure){
+        // correct result, display so
+        $correct = true;
+    } else {
+        $correct = false;
+        // incorrect response
+        // figure out if made wrong assumption or missing something
+        // first run through steps to find if steps includes something it shouldn't
+        $over_include_steps = array(); // store the step ID of any steps that included something they shouldn't have
+        foreach ($student_steps as $step){
+            $contains_extra_attribute = false;
+            foreach(str_split($step["FD_RIGHT"]) as $user_char){
+                if (!str_contains($correct_closure, $user_char)){ // if a user character is not in the correct closure set
+                    $contains_extra_attribute = true;
+                }
+            }
+            if ($contains_extra_attribute == true){
+                array_push($over_include_steps, $step["STEP_ID"]);
+            }
+        }
+        // checking for if the user did not include enough attributes in the closure set now
+        $invalid_steps = array(); // if the user used an FD in the input FDs that shouldn't have been able to be used
+        $under_include_steps = array(); // if the user uses an FD from the input set that can be used, but doesn't include all of the implied attributes from it
+        foreach($student_steps as $step){ // checking for invalid uses of an input fd
+            $valid_input_fd = true;
+            foreach(str_split($input_fds[$step["FD_USED"]-1]["FD_LEFT"]) as $char){
+                if (!str_contains($correct_closure, $char)){ // if the left input character is not in the correct closure
+                    $valid_input_fd = false;
+                }
+            }
+            if ($valid_input_fd== false){
+                array_push($invalid_steps, $step["STEP_ID"]);
+            }
+        }
+        
+        foreach($student_steps as $step){ // checking not using what an input id implies fully
+            $contains_few_attributes = false;
+            foreach(str_split($input_fds[$step["FD_USED"]-1]["FD_RIGHT"]) as $char){
+                if(!str_contains($step["FD_RIGHT"], $char)){
+                    $contains_few_attributes = true;
+                }
+            }
+            if ($contains_few_attributes == true){
+                array_push($under_include_steps, $step["STEP_ID"]);
+            }
+        }      
+    }
+} else {
+    $correct = false;
+}
+
+// handling all of the showing/hiding of forms and displays
 if (isset($input_fds[0])){
     $input = true;
 } else {
@@ -132,18 +190,10 @@ if (isset($student_steps[0])){
 } else {
     $steps = false;
 }
-$json = json_encode(array($input, $attribute, $steps, $student_done));
+
+$json = json_encode(array($input, $attribute, $steps, $student_done, $correct));
 echo "<script> var display_data=$json; </script>";
 
-// now here we will handle if the student has selected done.
-// steps: 
-// 1. check if they are correct
-// 2. if they are correct tell them
-// 3. if they are incorrect, find(check if exists) incorrect closure step assumptions
-// 4. inform user of incorrect ones
-// 5. if none exist, assume user didn't make enough assumptions, tell them
-// 6. done. tell them they can submit a new R or a new attribute closure to calculate
-        
 ?>
 <!DOCTYPE html>
 
@@ -155,7 +205,7 @@ echo "<script> var display_data=$json; </script>";
         <link rel="stylesheet" href="style.css"/>
         <script src="attclose_funcs.js"></script>
     </head>
-    <body onload="disp_sections(display_data[0], display_data[1], display_data[2], display_data[3])">
+    <body onload="disp_sections(display_data[0], display_data[1], display_data[2], display_data[3], display_data[4])">
         <div class="topnav">
             <a href="index.html">Home</a>
             <a class = "active" href="attclose.html">Attribute Closure</a>
@@ -263,7 +313,25 @@ echo "<script> var display_data=$json; </script>";
                     <?php endforeach ?>
                 </table>
             </div>
-            
+            <div id="correct_sol_disp">
+                <h4>Nice work! You found the correct closure.</h4>
+            </div>
+            <div id="incorrect_sol_disp">
+                <h4>You did not find the correct closure.</h4>
+                <p>
+                    There are three types of mistakes you could have made. The first mistake is including an attribute
+                    that does not belong in the final closure set. 
+                    The second mistake is using one of the input FD's when its left-hand side was not a subset of the closure set.
+                    The third mistake is not including all attributes in the closure set implied by a input FD's right-hand side.
+                    The three lists below show the steps where you made this mistake. If the list is empty, you did not make that type of mistake. 
+                </p>
+                <h5>Extra attributes: <?php foreach($over_include_steps as $char){echo $char.', ';}?></h5>
+                <h5>Invalid input usage: <?php foreach($invalid_steps as $char){echo $char.', ';}?></h5>
+                <h5>Left-out attribute: <?php foreach($under_include_steps as $char){echo $char.', ';}?></h5>
+                <p>
+                    Resubmit the attribute closure to try again when you are ready.
+                </p>
+            </div>
         </div>
     </body>
 </html>
