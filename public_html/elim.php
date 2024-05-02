@@ -204,7 +204,14 @@
         
         <h1>Elimination Method</h1>
         <p>
-            explain stuff here
+            After you enter in your input functional dependencies, you will create an attribute elimination tree one node at a time.
+            The root note, representing the relation set, R, will be automatically created for you.
+            Submit one node at a time, be careful to link your parent nodes correctly to create the tree you intend.
+            When you do not want a node to have children because no more attributes can be removed, make sure to mark it as a leaf.
+            It is recommended to do the calculation with a pencil and paper to keep track of larger trees.
+            Once you have constructed your tree, submit the tree. Then the leaf nodes you designated will be displayed.
+            Choose from these your candidate keys. Once you have chosen your candidate keys, submit and receive feedback.
+            
         </p>
         <div id="input_form">
             <p>
@@ -261,10 +268,14 @@
             <div id="steps_form">
                 <!-- Receive next step here-->
                 <form action="elim.php" method="post">
-                    <label for="fname">Closure Calculation Steps:</label><br>
+                    <label for="fname">Elimination Tree Nodes:</label><br>
+                    <label>Node ID:</label>
                     <input type="text" size="10" name="id" class="textinput">
+                    <label>ATTR:</label>
                     <input type="text" size="10" name="attr" class="textinput">
+                    <label>Parent ID:</label>
                     <input type="text" size="10" name="parent" class="textinput">
+                    <label>FD Justification ID:</label>
                     <input type="text" size="2" name="just" class="textinput">
                     <label>Leaf: Y </label>
                     <input type="radio" name="leaf" value="1">
