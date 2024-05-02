@@ -208,9 +208,9 @@ echo "<script> var display_data=$json; </script>";
     <body onload="disp_sections(display_data[0], display_data[1], display_data[2], display_data[3], display_data[4])">
         <div class="topnav">
             <a href="index.html">Home</a>
-            <a class = "active" href="attclose.html">Attribute Closure</a>
-            <a href="exhaust.html">Exhaustive</a>
-            <a href="heur.html">Heuristic</a>
+            <a class = "active" href="attclose.php">Attribute Closure</a>
+            <a href="exhaust.php">Exhaustive</a>
+            <a href="heur.php">Heuristic</a>
             <a href="elim.html">Elimination</a>
         </div>
 
@@ -229,8 +229,7 @@ echo "<script> var display_data=$json; </script>";
                     <input type="submit" value="Submit">
                 </form> 
 
-                <p>Click the "Submit" button to display the dependencies and show the closure set of each element in the relation set. 
-                    To exit the page you will need to click the back arrow on your browser.".</p>
+                <p>Click the "Submit" button to display the dependencies and begin the closure calculation.</p>
             </div>
             
             <div id="input_disp">
