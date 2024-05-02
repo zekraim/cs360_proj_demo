@@ -250,7 +250,7 @@ echo "<script> var display_data=$json; </script>";
             <a href="attclose.php">Attribute Closure</a>
             <a class ="active" href="exhaust.php">Exhaustive</a>
             <a href="heur.php">Heuristic</a>
-            <a href="elim.html">Elimination</a>
+            <a href="elim.php">Elimination</a>
         </div>
         
         <h1>Exhaustive Method</h1>
@@ -368,9 +368,7 @@ echo "<script> var display_data=$json; </script>";
                 You got <?php echo $user_super_count ?>/<?php echo $real_super_count?> super keys correct.<br>
             </p>
         </div>
-        <script>
-            
-            
+        <script>            
             $(document).ready(function(){                
                 disp_sections(display_data[0],display_data[1],display_data[2], display_data[3], display_data[4]);
             });

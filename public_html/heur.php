@@ -359,7 +359,7 @@ echo "<script> var display_data=$json; </script>";
             <a href="attclose.php">Attribute Closure</a>
             <a href="exhaust.php">Exhaustive</a>
             <a class="active" href="heur.php">Heuristic</a>
-            <a href="elim.html">Elimination</a>
+            <a href="elim.php">Elimination</a>
         </div>
 
         <h1>Heuristic Method</h1>

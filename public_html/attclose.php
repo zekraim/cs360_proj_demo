@@ -211,7 +211,7 @@ echo "<script> var display_data=$json; </script>";
             <a class = "active" href="attclose.php">Attribute Closure</a>
             <a href="exhaust.php">Exhaustive</a>
             <a href="heur.php">Heuristic</a>
-            <a href="elim.html">Elimination</a>
+            <a href="elim.php">Elimination</a>
         </div>
 
         <div>
